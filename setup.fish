@@ -17,4 +17,13 @@ cp ./fish/config.fish ~/.config/fish/config.fish
 source ~/.config/fish/config.fish
 
 nvm install 16
+
+ssh-keygen -t RSA -b 2048
+mwinit -o
+toolbox install brazilcli cr rde
+
+sudo mkdir -p -m 755 /workplace/{$USER}
+sudo chown -R {$USER}:amazon /workplace/{$USER}
+ln -s /workplace/{$USER} ~/workplace
+
 fish_update_completions
