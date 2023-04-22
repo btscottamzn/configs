@@ -20,7 +20,7 @@ nvm install 16
 
 ssh-keygen -t RSA -b 2048
 mwinit -o
-toolbox install brazilcli cr rde
+toolbox install brazilcli cr rde eda
 
 sudo mkdir -p -m 755 /workplace/{$USER}
 sudo chown -R {$USER}:amazon /workplace/{$USER}
