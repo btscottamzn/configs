@@ -474,5 +474,3 @@ require("nvim-tree").setup({
 })
 
 vim.keymap.set('v', '//', 'y/\\V<C-R>=escape(@",\'/\')<CR><CR>')
-vim.keymap.set('n', '<C-b>', ':w<CR>:!cd %:h; cd $(git rev-parse --show-toplevel); brazil-build release<CR>')
-vim.keymap.set('n', '<leader>m', ':w<CR>:!cd %:h; cd $(git rev-parse --show-toplevel); brazil-build ')
