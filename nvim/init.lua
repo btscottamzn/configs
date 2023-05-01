@@ -1,3 +1,5 @@
+vim.cmd.set('shell=/bin/bash')
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
@@ -137,6 +139,11 @@ require('lazy').setup({
 
 
   'nvim-tree/nvim-tree.lua',
+    
+  {
+    'jose-elias-alvarez/null-ls.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+  },
 
   require 'kickstart.plugins.autoformat',
   -- require 'kickstart.plugins.debug',
@@ -438,6 +445,15 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
+
+--null-ls setup
+local null_ls = require("null-ls")
+null_ls.setup({
+  sources = {
+    null_ls.builtins.diagnostics.eslint,
+    null_ls.builtins.formatting.prettier,
+  },
+})
 
 -- Quick save
 vim.keymap.set('n', '<leader>w', ':w<cr>')
