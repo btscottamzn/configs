@@ -87,12 +87,12 @@ require('lazy').setup({
   },
 
   {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
+    "ellisonleao/gruvbox.nvim",
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme 'onedark'
-    end,
+      vim.o.background = "dark"
+      vim.cmd.colorscheme 'gruvbox'
+    end
   },
 
   {
@@ -102,7 +102,7 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'gruvbox',
         component_separators = '|',
         section_separators = '',
       },
@@ -145,7 +145,13 @@ require('lazy').setup({
     dependencies = { 'nvim-lua/plenary.nvim' },
   },
 
+  {
+    'mfussenegger/nvim-dap',
+    dependencies = { 'theHamsta/nvim-dap-virtual-text', 'rcarriga/nvim-dap-ui' }
+  },
+
   require 'kickstart.plugins.autoformat',
+    
   -- require 'kickstart.plugins.debug',
   -- { import = 'custom.plugins' },
 }, {})
@@ -244,6 +250,7 @@ vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
+vim.keymap.set('n', '<leader>ss', require('telescope.builtin').resume, { desc = 'Resume Search' })
 
 -- [[ Configure Treesitter ]]
 -- See `:help nvim-treesitter`
@@ -421,15 +428,19 @@ cmp.setup {
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
     },
-    ['<Tab>'] = cmp.mapping(function(fallback)
+    ["<Tab>"] = cmp.mapping(function(fallback)
+      -- This little snippet will confirm with tab, and if no entry is selected, will confirm the first item
       if cmp.visible() then
-        cmp.select_next_item()
-      elseif luasnip.expand_or_jumpable() then
-        luasnip.expand_or_jump()
+        local entry = cmp.get_selected_entry()
+        if not entry then
+          cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+        else
+          cmp.confirm()
+        end
       else
         fallback()
       end
-    end, { 'i', 's' }),
+    end, { "i", "s", "c", }),
     ['<S-Tab>'] = cmp.mapping(function(fallback)
       if cmp.visible() then
         cmp.select_prev_item()
@@ -490,3 +501,94 @@ require("nvim-tree").setup({
 })
 
 vim.keymap.set('v', '//', 'y/\\V<C-R>=escape(@",\'/\')<CR><CR>')
+
+require("nvim-dap-virtual-text").setup({
+  enabled = true,
+})
+require("dapui").setup()
+local dap = require('dap')
+
+dap.adapters.delve = {
+  type = 'server',
+  port = '${port}',
+  executable = {
+    command = 'dlv',
+    args = { 'dap', '-l', '127.0.0.1:${port}', '--log', '--log-dest', './dlv.log', '--log-output', 'dap' },
+  }
+}
+
+dap.configurations.go = {
+  {
+    type = "delve",
+    name = "Debug",
+    request = "launch",
+    program = function()
+      return vim.fn.expand("%:p")
+    end,
+    dlvCwd = function()
+      local go_mod = vim.fn.findfile("go.mod", ".;")
+      return vim.fn.fnamemodify(go_mod, ":h")
+    end,
+  },
+  {
+    type = "delve",
+    name = "Debug test (go.mod)",
+    request = "launch",
+    mode = "test",
+    program = function()
+      return vim.fn.expand("%:p:h")
+    end,
+    dlvCwd = function()
+      local go_mod = vim.fn.findfile("go.mod", ".;")
+      return vim.fn.fnamemodify(go_mod, ":h")
+    end,
+  }
+}
+
+vim.keymap.set('n', '<F5>', dap.continue)
+vim.keymap.set('n', '<F1>', dap.step_into)
+vim.keymap.set('n', '<F2>', dap.step_over)
+vim.keymap.set('n', '<F3>', dap.step_out)
+vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint)
+vim.keymap.set('n', '<leader>B', function()
+  dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
+end)
+
+local dapui = require('dapui')
+-- Dap UI setup
+-- For more information, see |:help nvim-dap-ui|
+dapui.setup {
+  -- Set icons to characters that are more likely to work in every terminal.
+  --    Feel free to remove or use ones that you like more! :)
+  --    Don't feel like these are good choices.
+  icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
+  controls = {
+    icons = {
+      pause = '⏸',
+      play = '▶',
+      step_into = '⏎',
+      step_over = '⏭',
+      step_out = '⏮',
+      step_back = 'b',
+      run_last = '▶▶',
+      terminate = '⏹',
+    },
+  },
+}
+
+dap.listeners.after.event_initialized['dapui_config'] = dapui.open
+dap.listeners.before.event_terminated['dapui_config'] = dapui.close
+dap.listeners.before.event_exited['dapui_config'] = dapui.close
+
+local sign = vim.fn.sign_define
+
+sign("DapBreakpoint", { text = "●", texthl = "DapBreakpoint", linehl = "", numhl = "" })
+sign("DapBreakpointCondition", { text = "●", texthl = "DapBreakpointCondition", linehl = "", numhl = "" })
+sign("DapLogPoint", { text = "◆", texthl = "DapLogPoint", linehl = "", numhl = "" })
+
+vim.g.go_highlight_types = 1
+vim.g.go_highlight_fields = 1
+vim.g.go_highlight_functions = 1
+vim.g.go_highlight_function_calls = 1
+vim.g.go_highlight_extra_types = 1
+vim.g.go_highlight_operators = 1
