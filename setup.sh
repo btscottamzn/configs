@@ -15,6 +15,7 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 # Install brew packages
 brew install nvim fish fzf tmux ripgrep
 
+mkdir -p ~/.config
 cp -r ./nvim ~/.config/nvim
 cp ./tmux/.tmux.conf ~/
 
